@@ -22,5 +22,9 @@
   },
   "include": [
     "src"
-  ]
+  ],
+  "rules": {
+    "no-unused-vars": "off"
+
+  }
 }

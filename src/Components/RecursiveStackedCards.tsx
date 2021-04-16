@@ -1,96 +1,79 @@
 /* eslint-disable */
 
-import { makeStyles, Grid } from "@material-ui/core";
-import React, { useCallback, useState } from "react";
-import { DragSourceMonitor, DropTargetMonitor, useDrag, useDrop } from "react-dnd";
-import { Card } from '../App'
-import { PlayingCard } from "./playingCard";
-//import { RecursiveStackedCards2 } from "./RecursiveStackedCards2";
+import { Grid } from "@material-ui/core";
+import React, { useCallback, useContext, useState } from "react";
+import { Deck, Card } from '../Types'
+import { PlayingCard } from "./PlayingCard";
 
 
 
-interface RecursiveStackedCardsProps {
+interface Props {
   cards: Card[];
-  column?: number;
+
+  column: number;
   totalCards: number;
   currentCard: number;
-  moveCard: (card1: Card, card2: Card) => void;
+  moveCard: (fromCard: Card, toCard: Card) => void
+  moveCardToTopRight: (fromCard: Card, toIdx: number) => void
+
 
 }
 
-export const RecursiveStackedCards = React.memo((props: RecursiveStackedCardsProps): any => {
-  const [cards, setCards] = useState<Card[]>(() => props.cards)
-  const [column, setColumn] = useState(props.column)
+export const RecursiveStackedCards = React.memo((props: Props): any => {
 
-  const diff: number = props.currentCard
-  let curr = 0 + props.currentCard
+  let newCurr = props.currentCard + 1
+  const distBetweenCards = 43
 
 
-  function attachDrag(el: any) {
-    if (curr !== 0) {
-      drag(el)
-    }
-  }
+  const moveCardCb = useCallback((fromCard: Card, toCard: Card) => {
+    props.moveCard(fromCard, toCard)
+  }, [props.cards])
 
-
-
-  const [collected, drag, dragPreview] = useDrag(() => ({
-    type: "Card",
-
-    item: { props: props.cards[curr] },
-    end: (item, monitor) => {
-      const dropResult: any = monitor.getDropResult();
-      if (item && dropResult) {
-        let fromCard: Card = { suit: item.props.suit, value: item.props.value, column: column, discovered: true }
-        let toCard: Card = { suit: dropResult.props.suit, value: dropResult.props.value, column: dropResult.props.column, discovered: true }
-        setColumn(toCard.column)
-
-        console.log(`You dropped ${fromCard.value}, ${fromCard.suit} into ${toCard.value}, ${toCard.suit}`);
-        if (fromCard !== undefined && toCard !== undefined) {
-          props.moveCard(fromCard, toCard)
-        }
-
-      }
-    },
-
-
-  }))
+  const moveCardToTopRightCb = useCallback((fromCard: Card, toIdx: number) => {
+    props.moveCardToTopRight(fromCard, toIdx)
+  }, [props.cards])
 
 
 
-  if (curr === 0) {
-    //console.log(cards[curr])
-
-  }
-  if (curr < (cards.length - 1)) {
-
-
+  if (props.currentCard < (props.cards.length - 1)) {
     return (
-      <Grid item ref={attachDrag} style={{
-        position: "absolute",
-        top: curr === 1 ? "0px" : "27px"
+      <Grid item style={{
+        position: props.currentCard > 0 ? "absolute" : "static",
+        top: props.currentCard === 1 ? "0px" : distBetweenCards + "px",
 
       }}>
-        <PlayingCard suit={cards[curr].suit} value={cards[curr].value} hidden={true} turned={/*!cards[curr].discovered*/false} column={props.column} >
-          <RecursiveStackedCards cards={cards} column={props.column} moveCard={props.moveCard} totalCards={props.totalCards} currentCard={++curr} />
+
+        <PlayingCard card={props.cards[props.currentCard]} turned={!props.cards[props.currentCard].discovered} display={true} canDrop={false} canDrag={props.cards[props.currentCard].discovered} moveCard={props.moveCard} moveCardToTopRight={props.moveCardToTopRight}>
+          <RecursiveStackedCards cards={props.cards} column={props.column} totalCards={props.totalCards} currentCard={newCurr} moveCard={props.moveCard} moveCardToTopRight={props.moveCardToTopRight} />
         </PlayingCard>
       </Grid>
     )
   } else {
-    //console.log("render else")
-    //console.log(cards[curr])
 
     return (
-      <Grid item ref={attachDrag} style={{
-        position: "absolute",
-        top: curr === 1 ? "0px" : "27px"
+      <Grid item style={{
+        position: props.currentCard > 0 ? "absolute" : "static",
+        top: props.currentCard === 1 ? "0px" : distBetweenCards + "px"
       }}>
-        <PlayingCard suit={cards[curr].suit} value={cards[curr].value} hidden={false} turned={false} column={props.column} />
+        <PlayingCard card={props.cards[props.currentCard]} turned={false} display={true} canDrop={true} canDrag={props.cards[props.currentCard].discovered} moveCard={props.moveCard} moveCardToTopRight={props.moveCardToTopRight} />
       </Grid>
     )
   }
+  /*
+} else {
+  //Only render cards that are not beeing dragged
+  let tmpCards = [...cards].splice(0, curr)
+  //let tmpCurr = tmpCards.length - curr
 
+  return (
+    <Grid item style={{
+      position: curr > 0 ? "absolute" : "static",
+      top: "0px"
+    }}>
+      <PlayingCard card={tmpCards[0]} turned={false} display={false} canDrop={true} canDrag={false} />
+    </Grid>
+  )
 
-
-
+}
+*/
 })

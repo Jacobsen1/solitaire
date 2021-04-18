@@ -1,24 +1,36 @@
 /* eslint-disable */
-import React, { useCallback, useEffect, useState, useContext } from "react";
-import "./CSS/App.css";
-import { Grid } from "@material-ui/core";
-import { StackedCards } from './Components/StackedCards'
-import { DndProvider } from 'react-dnd'
-import { HTML5Backend } from "react-dnd-html5-backend";
-import TopRow from "./Components/TopRow";
-import { initGameBoard, getTopRightDeck, isValidStartingDeck, isValidTopDeck, isValidFromSplit } from './gameLogic'
-import { Card, Deck } from './Types'
-
-
+import React, { useCallback, useEffect, useState, useContext } from "react"
+import "./CSS/App.css"
+import { Grid } from "@material-ui/core"
+import { StackedCards } from "./Components/StackedCards"
+import { DndProvider } from "react-dnd"
+import { HTML5Backend } from "react-dnd-html5-backend"
+import TopRow from "./Components/TopRow"
+import {
+  initGameBoard,
+  getTopRightDeck,
+  isValidStartingDeck,
+  isValidTopDeck,
+  isValidFromSplit,
+} from "./gameLogic"
+import { Card, Deck } from "./Types"
 
 function App() {
-
   function moveCard(fromCard: Card, toCard: Card): void {
-    if (fromCard !== undefined && toCard !== undefined && isValidStartingDeck(fromCard, toCard)) {
+    if (
+      fromCard !== undefined &&
+      toCard !== undefined &&
+      isValidStartingDeck(fromCard, toCard)
+    ) {
       let tempSDeck = [...startingDeck]
-      let cardsToPush = tempSDeck[fromCard.column].splice(fromCard.pos + 1, (tempSDeck[fromCard.column].length - 1))
+      let cardsToPush = tempSDeck[fromCard.column].splice(
+        fromCard.pos + 1,
+        tempSDeck[fromCard.column].length - 1
+      )
       if (tempSDeck[fromCard.column].length > 1) {
-        tempSDeck[fromCard.column][tempSDeck[fromCard.column].length - 1].discovered = true
+        tempSDeck[fromCard.column][
+          tempSDeck[fromCard.column].length - 1
+        ].discovered = true
       }
       for (let i = 0; i < cardsToPush.length; i++) {
         cardsToPush[i].column = toCard.column
@@ -34,13 +46,16 @@ function App() {
     let tempTDeck = [...topRightDeck]
     let tempSDeck = [...startingDeck]
 
-    console.log(fromCard, toIdx)
-    console.log(tempTDeck[toIdx][tempTDeck[toIdx].length - 1])
-    if (fromCard !== undefined && isValidTopDeck(fromCard, tempTDeck[toIdx][tempTDeck[toIdx].length - 1]) && tempSDeck[fromCard.column].length - 2 === fromCard.pos) {
-
+    if (
+      fromCard !== undefined &&
+      isValidTopDeck(fromCard, tempTDeck[toIdx][tempTDeck[toIdx].length - 1]) &&
+      tempSDeck[fromCard.column].length - 2 === fromCard.pos
+    ) {
       tempSDeck[fromCard.column].splice(fromCard.pos + 1, 1)
       if (tempSDeck[fromCard.column].length > 1) {
-        tempSDeck[fromCard.column][tempSDeck[fromCard.column].length - 1].discovered = true
+        tempSDeck[fromCard.column][
+          tempSDeck[fromCard.column].length - 1
+        ].discovered = true
       }
       fromCard.isTop = true
       fromCard.column = toIdx
@@ -53,25 +68,32 @@ function App() {
   }
 
   const moveCardFromSplit = (fromCard: Card, toCard: Card): void => {
-    if (fromCard !== undefined && toCard !== undefined && isValidFromSplit(fromCard, toCard)) {
+    if (
+      fromCard !== undefined &&
+      toCard !== undefined &&
+      isValidFromSplit(fromCard, toCard)
+    ) {
       let tempSplitDeck = [...splitDeck]
 
       for (let i = 0; i < tempSplitDeck.length; i++) {
+        //Bytt til indexof?
         if (fromCard === tempSplitDeck[i][tempSplitDeck[i].length - 1]) {
           tempSplitDeck[i].splice(-1, 1)
         }
       }
 
-      fromCard.column = toCard.column
-      fromCard.pos = toCard.pos + 1
-
       if (toCard.isTop) {
+        moveCardToTopRight(fromCard, toCard.column)
+        /*
         let tempTDeck = [...topRightDeck]
         tempTDeck[toCard.column].push(fromCard)
         setTopRightDeck(tempTDeck)
+        */
       } else {
+        fromCard.column = toCard.column
+        fromCard.pos = toCard.pos + 1
+        fromCard.isInGlobal = false
         let tempSDeck = [...startingDeck]
-        fromCard.isTop = false
         tempSDeck[toCard.column].push(fromCard)
         setStartingDeck(tempSDeck)
       }
@@ -90,7 +112,7 @@ function App() {
     }
     tempSplitDeck = []
     while (arr1d.length) {
-      if ((arr1d.length - 3) > 0) {
+      if (arr1d.length - 3 > 0) {
         tempSplitDeck.push(arr1d.splice(arr1d.length - 3, 3))
       } else {
         tempSplitDeck.push(arr1d.splice(0, arr1d.length))
@@ -100,13 +122,9 @@ function App() {
     setSplitDeck(tempSplitDeck)
   }
 
-
-
   const [startingDeck, setStartingDeck] = useState<Deck[]>([])
   const [splitDeck, setSplitDeck] = useState<Deck[]>([])
   const [topRightDeck, setTopRightDeck] = useState<Deck[]>([])
-
-
 
   useEffect(() => {
     let gameBoard = initGameBoard()
@@ -116,26 +134,38 @@ function App() {
     console.log("Board initialized")
   }, [])
 
-
   console.log(startingDeck)
   console.log(splitDeck)
 
   return (
     <div className="App">
       <DndProvider backend={HTML5Backend}>
-        <Grid container spacing={8} direction="column" style={{ margin: "20px 18vw 20px 18vw" }}>
+        <Grid
+          container
+          spacing={8}
+          direction="column"
+          style={{ margin: "20px 18vw 20px 18vw" }}
+        >
+          <Grid item>
+            <TopRow
+              topRightDeck={topRightDeck}
+              splitDeck={splitDeck}
+              moveCardFromSplit={moveCardFromSplit}
+              updateSplitDeck={updateSplitDeck}
+            />
+          </Grid>
 
           <Grid item>
-            <TopRow topRightDeck={topRightDeck} splitDeck={splitDeck} moveCardFromSplit={moveCardFromSplit} updateSplitDeck={updateSplitDeck} />
+            <StackedCards
+              startingDeck={startingDeck}
+              moveCard={moveCard}
+              moveCardToTopRight={moveCardToTopRight}
+            />
           </Grid>
-
-          <Grid item >
-            <StackedCards startingDeck={startingDeck} moveCard={moveCard} moveCardToTopRight={moveCardToTopRight} />
-          </Grid>
-        </Grid >
-      </DndProvider >
-    </div >
+        </Grid>
+      </DndProvider>
+    </div>
   )
 }
 
-export default App;
+export default App

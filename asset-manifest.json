@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/solitaire/static/css/main.3cd65e9a.chunk.css",
-    "main.js": "/solitaire/static/js/main.f6fdb208.chunk.js",
-    "main.js.map": "/solitaire/static/js/main.f6fdb208.chunk.js.map",
+    "main.js": "/solitaire/static/js/main.622275db.chunk.js",
+    "main.js.map": "/solitaire/static/js/main.622275db.chunk.js.map",
     "runtime-main.js": "/solitaire/static/js/runtime-main.8e63c179.js",
     "runtime-main.js.map": "/solitaire/static/js/runtime-main.8e63c179.js.map",
     "static/js/2.11b4c455.chunk.js": "/solitaire/static/js/2.11b4c455.chunk.js",
@@ -17,6 +17,6 @@
     "static/js/runtime-main.8e63c179.js",
     "static/js/2.11b4c455.chunk.js",
     "static/css/main.3cd65e9a.chunk.css",
-    "static/js/main.f6fdb208.chunk.js"
+    "static/js/main.622275db.chunk.js"
   ]
 }

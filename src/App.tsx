@@ -46,16 +46,10 @@ function App() {
     let tempTDeck = [...topRightDeck]
     let tempSDeck = [...startingDeck]
 
-    if (
-      fromCard !== undefined &&
-      isValidTopDeck(fromCard, tempTDeck[toIdx][tempTDeck[toIdx].length - 1]) &&
-      tempSDeck[fromCard.column].length - 2 === fromCard.pos
-    ) {
+    if (fromCard !== undefined && isValidTopDeck(fromCard, tempTDeck[toIdx][tempTDeck[toIdx].length - 1]) && tempSDeck[fromCard.column].length - 2 === fromCard.pos) {
       tempSDeck[fromCard.column].splice(fromCard.pos + 1, 1)
       if (tempSDeck[fromCard.column].length > 1) {
-        tempSDeck[fromCard.column][
-          tempSDeck[fromCard.column].length - 1
-        ].discovered = true
+        tempSDeck[fromCard.column][tempSDeck[fromCard.column].length - 1].discovered = true
       }
       fromCard.isTop = true
       fromCard.column = toIdx
@@ -83,12 +77,12 @@ function App() {
       }
 
       if (toCard.isTop) {
-        moveCardToTopRight(fromCard, toCard.column)
-        /*
         let tempTDeck = [...topRightDeck]
+        fromCard.isTop = true
+        fromCard.column = toCard.column
         tempTDeck[toCard.column].push(fromCard)
         setTopRightDeck(tempTDeck)
-        */
+
       } else {
         fromCard.column = toCard.column
         fromCard.pos = toCard.pos + 1

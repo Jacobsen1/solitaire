@@ -3,7 +3,7 @@
 import { Grid } from "@material-ui/core";
 import React, { useCallback, useContext, useState } from "react";
 import { Deck, Card } from '../Types'
-import { PlayingCard } from "./playingCard";
+import { PlayingCard } from "./PlayingCard";
 
 
 

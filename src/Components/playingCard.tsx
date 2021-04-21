@@ -1,10 +1,17 @@
 /* eslint-disable */
 
-import React, { useState, useContext, PropsWithChildren, useEffect } from "react";
+import React, { useEffect } from "react";
 import { makeStyles } from "@material-ui/styles";
 import { Grid } from "@material-ui/core";
-import { useDrag, useDrop, useDragDropManager } from 'react-dnd';
+import { useDrag, useDrop } from 'react-dnd';
 import { Deck, Card } from '../Types'
+import { usePreview } from 'react-dnd-preview';
+import { getEmptyImage } from "react-dnd-html5-backend";
+import { useSelector, useDispatch } from 'react-redux'
+import { moveCardStartingCard, moveCardSplitDeck, moveCardTopRight } from "../Actions/GameActions";
+import { isValidStartingDeck, isValidTopDeck, isValidFromSplit, } from "../gameLogic"
+
+
 const cardDimDiff = 0.7191
 const cardWidth = 100
 
@@ -32,7 +39,7 @@ const useStyles = makeStyles({
 
 
     //Image styling
-    backgroundImage: `url(background2.png)`,
+    backgroundImage: `url(` + process.env.PUBLIC_URL + `/background2.png)`,
     backgroundRepeat: "no-repeat",
     backgroundSize: "cover"
   },
@@ -70,43 +77,32 @@ interface Props {
   display: boolean
   canDrop: boolean
   canDrag: boolean
-  //Functions
-  moveCard?: (fromCard: Card, toCard: Card) => void
-  moveCardToTopRight?: (fromCard: Card, toIdx: number) => void
-  moveCardFromSplit?: (fromCard: Card, toCard: Card) => void
+}
 
-  //Children
-  children?: any
-}
-interface RefObject<T> {
-  readonly current: T | null
-}
 
 export const PlayingCard = React.memo((props: Props) => {
   const classes = useStyles()
-  if (props.card.isInGlobal && props.card.suit === "♠︎") {
-    //console.log("Rendering " + props.card.suit + " " + props.card.value)
-  }
+  const dispatch = useDispatch()
+
+  //console.log("Rendering" + props.card.suit + " " + props.card.value)
   function attachDragNDrop(el: any) {
     props.canDrop ? drop(el) : () => { }
     props.canDrag ? drag(el) : () => { }
+
   }
 
 
-  const [{ canDrop, isOver }, drop] = useDrop({
+  const [{ }, drop] = useDrop({
     accept: "Card",
     drop: () => {
       return { props: props.card }
     },
   })
 
-  const [collected, drag, dragPreview] = useDrag({
+  const [{ isDragging }, drag, dragPreview] = useDrag({
     type: "Card",
     item: () => {
-
-      console.log(props.card.suit + " " + props.card.value)
       return { card: props.card }
-
     },
     end: (item, monitor) => {
       const dropResult: any = monitor.getDropResult();
@@ -114,39 +110,33 @@ export const PlayingCard = React.memo((props: Props) => {
         let fromCard: Card = item.card
         let toCard: Card = dropResult.props
         if (fromCard !== undefined && toCard !== undefined && (fromCard.pos !== toCard.pos || fromCard.column !== toCard.column)) {
-          console.log(fromCard)
-          console.log(toCard)
-          if (toCard.isTop && props.moveCardToTopRight !== undefined) {
-            let toIdx = toCard.column
-            console.log(`You dropped ${fromCard.value}, ${fromCard.suit} into topRightDeck ${toIdx}`)
-            props.moveCardToTopRight(fromCard, toIdx)
-
-          } else if (fromCard.isInGlobal && props.moveCardFromSplit !== undefined) {
-            console.log(`You dropped ${fromCard.value}, ${fromCard.suit} from splitDeck into ${toCard.value}, ${toCard.suit}`);
-            props.moveCardFromSplit(fromCard, toCard)
-          } else if (props.moveCard !== undefined && !toCard.isTop) {
-            //moveCard
-            console.log(`You dropped ${fromCard.value}, ${fromCard.suit} into ${toCard.value}, ${toCard.suit}`);
-            props.moveCard(fromCard, toCard)
+          let payload = { fromCard: item.card, toCard: dropResult.props }
+          if (toCard.isTop && !fromCard.isInGlobal && isValidTopDeck(fromCard, toCard)) {
+            dispatch(moveCardTopRight(payload))
+          } else if (fromCard.isInGlobal && isValidFromSplit(fromCard, toCard)) {
+            dispatch(moveCardSplitDeck(payload))
+          } else if (!toCard.isTop && isValidStartingDeck(fromCard, toCard)) {
+            dispatch(moveCardStartingCard(payload))
           }
-
         }
-
         else {
-          console.log("Something is undefined in useDrag or Cant drop a card on")
-          console.log(fromCard)
-          console.log(toCard)
+          console.log("Something is undefined in useDrag or Cant drop a card on is self")
         }
       }
-    }
+    },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging()
+    })
   })
-
-
+  /*
+    useEffect(() => {
+      dragPreview(getEmptyImage(), { captureDraggingState: false });
+    }, [])
+  */
 
   if (props.turned === false || props.card.suit === '') {
     return (
       <>
-
         <Grid
           ref={attachDragNDrop}
           container
@@ -155,9 +145,8 @@ export const PlayingCard = React.memo((props: Props) => {
           style={{
             color: props.card.suit === "♥︎" || props.card.suit === "♦︎" ? "red" : "black",
             border: props.card.suit === '' ? "2px solid rgba(0, 0, 0, 0.3)" : "3px solid rgba(0, 0, 0)",
-            display: !props.display ? "none" : "",
-
-
+            display: !props.display /*|| isDragging*/ ? "none" : "",
+            cursor: props.canDrag ? "pointer" : undefined,
           }}
 
         >
@@ -175,8 +164,6 @@ export const PlayingCard = React.memo((props: Props) => {
               {props.card.suit}
             </Grid>
           </Grid>
-
-
           <Grid
             container
             direction="row"
@@ -194,7 +181,8 @@ export const PlayingCard = React.memo((props: Props) => {
 
 
         </Grid>
-        {props.children}
+
+
       </>
     );
   } else {
@@ -204,7 +192,7 @@ export const PlayingCard = React.memo((props: Props) => {
         }}>
           <div className={classes.cardbg} />
         </Grid>
-        {props.children}
+
       </>
     );
   }

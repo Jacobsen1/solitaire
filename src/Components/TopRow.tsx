@@ -1,6 +1,9 @@
 /* eslint-disable */
 import { Grid } from "@material-ui/core"
 import React, { useCallback, useContext, useEffect, useState } from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { updateSplitDeck } from "../Actions/GameActions"
+import { RootState, selectSplitDeck } from "../Reducers/GameReducer"
 
 import { Deck, Card } from "../Types"
 import { PlayingCard } from "./PlayingCard"
@@ -8,51 +11,30 @@ import { PlayingCard } from "./PlayingCard"
 interface Props {
   topRightDeck: Deck[]
   splitDeck: Deck[]
-  moveCardFromSplit: (fromCard: Card, toCard: Card) => void
-  updateSplitDeck: () => void
 }
 
 export function TopRow(props: Props) {
   const [count, setCount] = useState<number>(-1)
-  const [threeCards, setThreeCards] = useState(() =>
-    count > -1 ? props.splitDeck[count] : []
-  )
-
-  const moveCardFromSplitCb = useCallback(
-    (fromCard: Card, toCard: Card) => {
-      props.moveCardFromSplit(fromCard, toCard)
-    },
-    [props.topRightDeck, props.splitDeck]
-  )
+  const splitDeck = useSelector<RootState, Deck[]>(selectSplitDeck);
+  const dispatch = useDispatch()
 
   return (
     <Grid container direction="row" justify="space-between">
       <Grid
         item
         onClick={() => {
-          console.log(count)
           if (count >= props.splitDeck.length - 1) {
-            props.updateSplitDeck()
+            dispatch(updateSplitDeck())
             setCount(-1)
-            setThreeCards([])
           } else {
-            console.log(props.splitDeck[count + 1])
-            setThreeCards(props.splitDeck[count + 1])
             setCount(count + 1)
           }
+          console.log(count)
+
         }}
       >
         <PlayingCard
-          card={{
-            suit: "bg",
-            value: "",
-            numValue: -1,
-            discovered: false,
-            column: -1,
-            pos: -1,
-            isTop: false,
-            isInGlobal: false,
-          }}
+          card={{ suit: "bg", value: "", numValue: -1, discovered: false, column: -1, pos: -1, isTop: false, isInGlobal: false, }}
           turned={true}
           display={true}
           canDrop={false}
@@ -61,7 +43,7 @@ export function TopRow(props: Props) {
       </Grid>
       <Grid item style={{ width: "100px" }}>
         <Grid container direction="row" style={{ position: "relative" }}>
-          {threeCards.map((card, idx) => {
+          {count > -1 ? splitDeck[count].map((card, idx) => {
             return (
               <Grid
                 item
@@ -76,12 +58,11 @@ export function TopRow(props: Props) {
                   turned={false}
                   display={true}
                   canDrop={false}
-                  canDrag={idx === threeCards.length - 1 ? true : false}
-                  moveCardFromSplit={moveCardFromSplitCb}
+                  canDrag={idx === splitDeck[count].length - 1 ? true : false}
                 />
               </Grid>
             )
-          })}
+          }) : ''}
         </Grid>
       </Grid>
       <Grid item style={{ width: "100px" }}></Grid>

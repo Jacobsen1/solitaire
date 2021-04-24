@@ -1,16 +1,17 @@
 /* eslint-disable */
 
-import React, { useEffect } from "react";
+import React, { createElement, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { makeStyles } from "@material-ui/styles";
 import { Grid } from "@material-ui/core";
-import { useDrag, useDrop } from 'react-dnd';
+import { DragPreviewImage, useDrag, useDrop } from 'react-dnd';
 import { Deck, Card } from '../Types'
 import { usePreview } from 'react-dnd-preview';
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { useSelector, useDispatch } from 'react-redux'
-import { moveCardStartingCard, moveCardSplitDeck, moveCardTopRight } from "../Actions/GameActions";
+import { moveCardStartingCard, moveCardSplitDeck, moveCardTopRight, toggleDraggedCards } from "../Actions/GameActions";
 import { isValidStartingDeck, isValidTopDeck, isValidFromSplit, } from "../gameLogic"
-
+import * as htmlToImage from 'html-to-image';
+import { selectStartingDeck } from "../Reducers/GameReducer";
 
 const cardDimDiff = 0.7191
 const cardWidth = 100
@@ -24,7 +25,6 @@ const useStyles = makeStyles({
     borderRadius: "8px",
     padding: "0px 4px 0px 4px",
     backgroundColor: "white",
-
     border: "3px solid black",
     //position: "absolute",
 
@@ -79,17 +79,59 @@ interface Props {
   canDrag: boolean
 }
 
+const getClassNameh = (n: HTMLCollectionOf<Element>) => {
+  let newNode = document.createElement("div")
+  newNode.className = "MuiGrid-root MuiGrid-item"
+
+  for (let i = 0; i < n.length; i++) {
+    let node = n.item(i)?.cloneNode(true)
+    if (node) {
+      newNode.appendChild(node)
+    }
+    return newNode
+  }
+}
+
+
+
+
+
 
 export const PlayingCard = React.memo((props: Props) => {
   const classes = useStyles()
   const dispatch = useDispatch()
+  const startingDeck = useSelector(selectStartingDeck)
+
+  const [img, setImg] = useState('')
+  const [node, setNode] = useState<HTMLElement | null>(null)
+  /*
+   useEffect(() => {
+    
+     if (props.card.discovered) {
+       //let nodes = document.getElementsByClassName("pile" + props.card.column)
+       //let node = getClassNameh(nodes)
+       let node = document.getElementById(props.card.suit + props.card.numValue)
+       console.log(node)
+       //getClassName(document.getElementsByClassName("pile" + props.card.column))
+       if (node) {
+         htmlToImage.toJpeg(node).then((dataUrl) => {
+           setImg(dataUrl)
+         })
+           .catch(err => {
+             console.log(err)
+           })
+       }
+     }
+     
+   }, [props])
+ */
 
   //console.log("Rendering" + props.card.suit + " " + props.card.value)
   function attachDragNDrop(el: any) {
     props.canDrop ? drop(el) : () => { }
     props.canDrag ? drag(el) : () => { }
-
   }
+
 
 
   const [{ }, drop] = useDrop({
@@ -102,6 +144,32 @@ export const PlayingCard = React.memo((props: Props) => {
   const [{ isDragging }, drag, dragPreview] = useDrag({
     type: "Card",
     item: () => {
+      /*
+      let startingDeckCp = [...startingDeck]
+      let draggedCards: Deck = []
+      if (startingDeck[props.card.column]) {
+        draggedCards = startingDeckCp[props.card.column].slice(props.card.pos, startingDeckCp[props.card.column].length)
+        console.log(draggedCards)
+      }
+      let newNode = document.createElement("div")
+ 
+      for (let i = 0; i < draggedCards.length; i++) {
+        console.log(draggedCards[i].suit + draggedCards[i].value)
+        let tmpNode = document.getElementById(draggedCards[i].suit + draggedCards[i].numValue)
+        console.log(tmpNode)
+        if (tmpNode) {
+          newNode.appendChild(tmpNode)
+        }
+      }
+      htmlToImage.toPng(newNode).then((dataUrl) => {
+        setImg(dataUrl)
+      })
+        .catch(err => {
+          console.log(err)
+        })
+ 
+      console.log(newNode)
+*/
       return { card: props.card }
     },
     end: (item, monitor) => {
@@ -111,11 +179,11 @@ export const PlayingCard = React.memo((props: Props) => {
         let toCard: Card = dropResult.props
         if (fromCard !== undefined && toCard !== undefined && (fromCard.pos !== toCard.pos || fromCard.column !== toCard.column)) {
           let payload = { fromCard: item.card, toCard: dropResult.props }
-          if (toCard.isTop && !fromCard.isInGlobal && isValidTopDeck(fromCard, toCard)) {
+          if (toCard.isTop && !fromCard.isInGlobal /*&& isValidTopDeck(fromCard, toCard)*/) {
             dispatch(moveCardTopRight(payload))
-          } else if (fromCard.isInGlobal && isValidFromSplit(fromCard, toCard)) {
+          } else if (fromCard.isInGlobal /*&& isValidFromSplit(fromCard, toCard)*/) {
             dispatch(moveCardSplitDeck(payload))
-          } else if (!toCard.isTop && isValidStartingDeck(fromCard, toCard)) {
+          } else if (!toCard.isTop/*&& isValidStartingDeck(fromCard, toCard)*/) {
             dispatch(moveCardStartingCard(payload))
           }
         }
@@ -124,21 +192,23 @@ export const PlayingCard = React.memo((props: Props) => {
         }
       }
     },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging()
-    })
+    collect(monitor) {
+      return { isDragging: monitor.isDragging() }
+    }
   })
-  /*
-    useEffect(() => {
-      dragPreview(getEmptyImage(), { captureDraggingState: false });
-    }, [])
-  */
+
+  useEffect(() => {
+    dragPreview(getEmptyImage(), { captureDraggingState: false });
+  }, [])
+
 
   if (props.turned === false || props.card.suit === '') {
     return (
       <>
+        {/*<DragPreviewImage connect={dragPreview} src={img} />*/}
         <Grid
           ref={attachDragNDrop}
+          id={props.card.suit + props.card.numValue}
           container
           direction="row"
           className={classes.card}
@@ -181,10 +251,8 @@ export const PlayingCard = React.memo((props: Props) => {
 
 
         </Grid>
-
-
       </>
-    );
+    )
   } else {
     return (
       <>

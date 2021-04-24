@@ -7,6 +7,7 @@ export interface Card {
   pos: number
   isTop: boolean
   isInGlobal: boolean
+  display: boolean
 
 }
 

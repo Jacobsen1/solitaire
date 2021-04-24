@@ -33,10 +33,10 @@ export function initGameBoard(): {splitDeck: Deck[], startingDeck: Deck[]} {
 
 export function getTopRightDeck() : Deck[] {
   return [
-    [{ suit: '', value: '', numValue: -1, discovered: false, column: 0, pos: -1, isTop: true, isInGlobal: false }],
-    [{ suit: '', value: '', numValue: -1, discovered: false, column: 1, pos: -1, isTop: true, isInGlobal: false }],
-    [{ suit: '', value: '', numValue: -1, discovered: false, column: 2, pos: -1, isTop: true, isInGlobal: false }],
-    [{ suit: '', value: '', numValue: -1, discovered: false, column: 3, pos: -1, isTop: true, isInGlobal: false }]
+    [{ suit: '', value: '', numValue: -1, discovered: false, column: 0, pos: -1, isTop: true, isInGlobal: false, display: true }],
+    [{ suit: '', value: '', numValue: -1, discovered: false, column: 1, pos: -1, isTop: true, isInGlobal: false, display: true }],
+    [{ suit: '', value: '', numValue: -1, discovered: false, column: 2, pos: -1, isTop: true, isInGlobal: false, display: true }],
+    [{ suit: '', value: '', numValue: -1, discovered: false, column: 3, pos: -1, isTop: true, isInGlobal: false, display: true }]
   ]
 }
 
@@ -67,7 +67,7 @@ function getGlobalDeck(): Deck {
   let returnDeck: Card[] = [];
   for (let suit of suits) {
     for (let i = 0; i < values.length; i++) {
-      returnDeck.push({ suit: suit, value: values[i], numValue: numValues[i], discovered: true, column: -1, pos: -1, isTop: false, isInGlobal: true });
+      returnDeck.push({ suit: suit, value: values[i], numValue: numValues[i], discovered: true, column: -1, pos: -1, isTop: false, isInGlobal: true, display: true });
     }
   }
   return returnDeck

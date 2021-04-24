@@ -34,7 +34,7 @@ export function TopRow(props: Props) {
         }}
       >
         <PlayingCard
-          card={{ suit: "bg", value: "", numValue: -1, discovered: false, column: -1, pos: -1, isTop: false, isInGlobal: false, }}
+          card={{ suit: "bg", value: "", numValue: -1, discovered: false, column: -1, pos: -1, isTop: false, isInGlobal: false, display: true }}
           turned={true}
           display={true}
           canDrop={false}

@@ -37,7 +37,7 @@ function App() {
   return (
     <div className="App">
       <DndProvider backend={HTML5Backend}>
-        {/*<PlayingCardPreview startingDeck={startingDeck} />*/}
+        <PlayingCardPreview startingDeck={startingDeck} />
 
         <Grid container spacing={8} direction="column" style={{ margin: "20px 18vw 20px 18vw" }}>
 

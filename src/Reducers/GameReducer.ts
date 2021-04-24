@@ -66,8 +66,6 @@ export const GameReducer = (state = initialState, action: GameActions): GameStat
       }else {
         return state
       }
-      
-    
     case GameActionTypes.UpdateSplitDeck:
       console.log("Resetting splitdeck")
       return produce(state, draft => {
@@ -95,8 +93,6 @@ export const GameReducer = (state = initialState, action: GameActions): GameStat
         }
         draft.splitDeck = tempSplitDeck
       })
-
-    
     case GameActionTypes.InitializeGame:
       console.log("Initializing Game")
       return produce(state, draft => {
@@ -104,7 +100,13 @@ export const GameReducer = (state = initialState, action: GameActions): GameStat
         draft.splitDeck = action.payload.splitDeck
         draft.topRightDeck = action.payload.topRightDeck
       })
-      
+    case GameActionTypes.ToggleDraggedCards:
+      return produce(state, draft => {
+        for(let i = action.payload.pos; i < draft.startingDeck[action.payload.column].length; i++){
+          draft.startingDeck[action.payload.column][i].display = !draft.startingDeck[action.payload.column][i].display
+        }
+      })
+    
     default:
       return state
 

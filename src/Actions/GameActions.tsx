@@ -14,6 +14,7 @@ export type GameState = {
   startingDeck: Deck[]
   splitDeck: Deck[]
   topRightDeck: Deck[]
+  draggedCards: Deck
 }
 type MoveCardPayload = {
   fromCard: Card
@@ -40,7 +41,7 @@ type UpdateSplitDeck = {
 }
 type ToggleDraggedCards = {
   type: GameActionTypes.ToggleDraggedCards
-  payload: Card
+  payload: { card: Card, display: boolean }
 }
 
 export type GameActions =
@@ -75,7 +76,7 @@ export const updateSplitDeck = () => ({
   type: GameActionTypes.UpdateSplitDeck
 })
 
-export const toggleDraggedCards = (payload: Card) => ({
+export const toggleDraggedCards = (payload: { card: Card, display: boolean }) => ({
   type: GameActionTypes.ToggleDraggedCards,
   payload
 })

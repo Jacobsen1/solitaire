@@ -22,7 +22,6 @@ export const CardPile = (props: Props): any => {
           card={{ suit: '', value: '', numValue: -1, discovered: false, column: props.column, pos: -1, isTop: false, isInGlobal: false, display: true }}
           canDrag={false}
           canDrop={true}
-          display={true}
           turned={false}
         />
       </Grid>
@@ -32,7 +31,6 @@ export const CardPile = (props: Props): any => {
             <PlayingCard
               card={card}
               turned={!card.discovered}
-              display={true}
               canDrop={idx === props.cards.length - 1}
               canDrag={card.discovered}
             />

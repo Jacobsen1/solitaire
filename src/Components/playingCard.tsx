@@ -1,17 +1,15 @@
 /* eslint-disable */
 
-import React, { createElement, useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, } from "react";
 import { makeStyles } from "@material-ui/styles";
 import { Grid } from "@material-ui/core";
-import { DragPreviewImage, useDrag, useDrop } from 'react-dnd';
+import { useDrag, useDrop } from 'react-dnd';
 import { Deck, Card } from '../Types'
-import { usePreview } from 'react-dnd-preview';
 import { getEmptyImage } from "react-dnd-html5-backend";
 import { useSelector, useDispatch } from 'react-redux'
 import { moveCardStartingCard, moveCardSplitDeck, moveCardTopRight, toggleDraggedCards } from "../Actions/GameActions";
-import { isValidStartingDeck, isValidTopDeck, isValidFromSplit, } from "../gameLogic"
-import * as htmlToImage from 'html-to-image';
 import { selectStartingDeck } from "../Reducers/GameReducer";
+
 
 const cardDimDiff = 0.7191
 const cardWidth = 100
@@ -74,65 +72,20 @@ const useStyles = makeStyles({
 interface Props {
   card: Card
   turned: boolean
-  display: boolean
   canDrop: boolean
   canDrag: boolean
 }
-
-const getClassNameh = (n: HTMLCollectionOf<Element>) => {
-  let newNode = document.createElement("div")
-  newNode.className = "MuiGrid-root MuiGrid-item"
-
-  for (let i = 0; i < n.length; i++) {
-    let node = n.item(i)?.cloneNode(true)
-    if (node) {
-      newNode.appendChild(node)
-    }
-    return newNode
-  }
-}
-
-
-
-
 
 
 export const PlayingCard = React.memo((props: Props) => {
   const classes = useStyles()
   const dispatch = useDispatch()
-  const startingDeck = useSelector(selectStartingDeck)
 
-  const [img, setImg] = useState('')
-  const [node, setNode] = useState<HTMLElement | null>(null)
-  /*
-   useEffect(() => {
-    
-     if (props.card.discovered) {
-       //let nodes = document.getElementsByClassName("pile" + props.card.column)
-       //let node = getClassNameh(nodes)
-       let node = document.getElementById(props.card.suit + props.card.numValue)
-       console.log(node)
-       //getClassName(document.getElementsByClassName("pile" + props.card.column))
-       if (node) {
-         htmlToImage.toJpeg(node).then((dataUrl) => {
-           setImg(dataUrl)
-         })
-           .catch(err => {
-             console.log(err)
-           })
-       }
-     }
-     
-   }, [props])
- */
-
-  //console.log("Rendering" + props.card.suit + " " + props.card.value)
   function attachDragNDrop(el: any) {
     props.canDrop ? drop(el) : () => { }
     props.canDrag ? drag(el) : () => { }
   }
-
-
+  console.log("render")
 
   const [{ }, drop] = useDrop({
     accept: "Card",
@@ -141,35 +94,11 @@ export const PlayingCard = React.memo((props: Props) => {
     },
   })
 
-  const [{ isDragging }, drag, dragPreview] = useDrag({
+  const [{ isDragging, item, didDrop }, drag, dragPreview] = useDrag({
     type: "Card",
     item: () => {
-      /*
-      let startingDeckCp = [...startingDeck]
-      let draggedCards: Deck = []
-      if (startingDeck[props.card.column]) {
-        draggedCards = startingDeckCp[props.card.column].slice(props.card.pos, startingDeckCp[props.card.column].length)
-        console.log(draggedCards)
-      }
-      let newNode = document.createElement("div")
- 
-      for (let i = 0; i < draggedCards.length; i++) {
-        console.log(draggedCards[i].suit + draggedCards[i].value)
-        let tmpNode = document.getElementById(draggedCards[i].suit + draggedCards[i].numValue)
-        console.log(tmpNode)
-        if (tmpNode) {
-          newNode.appendChild(tmpNode)
-        }
-      }
-      htmlToImage.toPng(newNode).then((dataUrl) => {
-        setImg(dataUrl)
-      })
-        .catch(err => {
-          console.log(err)
-        })
- 
-      console.log(newNode)
-*/
+
+      //dispatch(toggleDraggedCards({ card: props.card, display: false }))
       return { card: props.card }
     },
     end: (item, monitor) => {
@@ -188,12 +117,17 @@ export const PlayingCard = React.memo((props: Props) => {
           }
         }
         else {
+          //dispatch(toggleDraggedCards({ card: props.card, display: true }))
           console.log("Something is undefined in useDrag or Cant drop a card on is self")
         }
+      } else {
+        console.log("end")
+        dispatch(toggleDraggedCards({ card: props.card, display: true }))
+
       }
     },
     collect(monitor) {
-      return { isDragging: monitor.isDragging() }
+      return { isDragging: monitor.isDragging(), item: monitor.getItem(), didDrop: monitor.didDrop() }
     }
   })
 
@@ -201,11 +135,18 @@ export const PlayingCard = React.memo((props: Props) => {
     dragPreview(getEmptyImage(), { captureDraggingState: false });
   }, [])
 
+  useEffect(() => {
+    if (item && item.card && isDragging) {
+      dispatch(toggleDraggedCards({ card: item.card, display: !isDragging }));
+    }
+  }, [isDragging]);
+
+
+
 
   if (props.turned === false || props.card.suit === '') {
     return (
       <>
-        {/*<DragPreviewImage connect={dragPreview} src={img} />*/}
         <Grid
           ref={attachDragNDrop}
           id={props.card.suit + props.card.numValue}
@@ -215,10 +156,9 @@ export const PlayingCard = React.memo((props: Props) => {
           style={{
             color: props.card.suit === "♥︎" || props.card.suit === "♦︎" ? "red" : "black",
             border: props.card.suit === '' ? "2px solid rgba(0, 0, 0, 0.3)" : "3px solid rgba(0, 0, 0)",
-            display: !props.display /*|| isDragging*/ ? "none" : "",
+            //display: !props.card.display ? "none" : undefined,
             cursor: props.canDrag ? "pointer" : undefined,
           }}
-
         >
           <Grid
             container
@@ -248,23 +188,14 @@ export const PlayingCard = React.memo((props: Props) => {
               {props.card.suit}
             </Grid>
           </Grid>
-
-
         </Grid>
       </>
     )
   } else {
     return (
-      <>
-        <Grid container style={{
-        }}>
-          <div className={classes.cardbg} />
-        </Grid>
-
-      </>
+      <Grid container>
+        <div className={classes.cardbg} />
+      </Grid>
     );
   }
 })
-
-//False = Rerender
-//True = Not rerender

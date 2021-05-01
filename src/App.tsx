@@ -30,14 +30,14 @@ function App() {
 
   useEffect(() => {
     let gameBoard = initGameBoard()
-    dispatch(initializeGame({ startingDeck: gameBoard.startingDeck, splitDeck: gameBoard.splitDeck, topRightDeck: getTopRightDeck() }))
+    dispatch(initializeGame({ startingDeck: gameBoard.startingDeck, splitDeck: gameBoard.splitDeck, topRightDeck: getTopRightDeck(), draggedCards: [] }))
     console.log("Board initialized")
   }, [])
 
   return (
     <div className="App">
       <DndProvider backend={HTML5Backend}>
-        <PlayingCardPreview startingDeck={startingDeck} />
+        <PlayingCardPreview />
 
         <Grid container spacing={8} direction="column" style={{ margin: "20px 18vw 20px 18vw" }}>
 

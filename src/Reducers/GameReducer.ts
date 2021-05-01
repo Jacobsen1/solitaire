@@ -7,7 +7,8 @@ import produce from "immer";
 export const initialState: GameState = {
   startingDeck: [],
   splitDeck: [],
-  topRightDeck: []
+  topRightDeck: [],
+  draggedCards: []
 }
 
 
@@ -18,7 +19,10 @@ export const GameReducer = (state = initialState, action: GameActions): GameStat
       return produce(state, draft => {
         let fromCard = action.payload.fromCard
         let toCard = action.payload.toCard
-        let cardsToPush = draft.startingDeck[fromCard.column].splice(fromCard.pos, draft.startingDeck[fromCard.column].length - fromCard.pos)
+        //let cardsToPush = draft.startingDeck[fromCard.column].splice(fromCard.pos, draft.startingDeck[fromCard.column].length - fromCard.pos)
+        let cardsToPush = draft.draggedCards.slice(0)
+        console.log(cardsToPush)
+
         for(let card of cardsToPush){
           if(draft.startingDeck[toCard.column].length === 0){
             card.pos = 0
@@ -102,8 +106,13 @@ export const GameReducer = (state = initialState, action: GameActions): GameStat
       })
     case GameActionTypes.ToggleDraggedCards:
       return produce(state, draft => {
-        for(let i = action.payload.pos; i < draft.startingDeck[action.payload.column].length; i++){
-          draft.startingDeck[action.payload.column][i].display = !draft.startingDeck[action.payload.column][i].display
+        if(!action.payload.display){
+          let draggedCards = draft.startingDeck[action.payload.card.column].splice(action.payload.card.pos)
+          draft.draggedCards = draggedCards
+        } else {
+          let draggedCards = draft.draggedCards
+          draggedCards.map(card => draft.startingDeck[action.payload.card.column].push(card))
+          draft.draggedCards = []
         }
       })
     
@@ -118,6 +127,7 @@ export type RootState = GameState
 export const selectStartingDeck = (state: RootState): Deck[] => state.startingDeck
 export const selectSplitDeck = (state: RootState): Deck[] => state.splitDeck
 export const selectTopRightDeck = (state: RootState): Deck[] => state.topRightDeck
+export const selectDraggedCards = (state: RootState): Deck => state.draggedCards
 
 
 

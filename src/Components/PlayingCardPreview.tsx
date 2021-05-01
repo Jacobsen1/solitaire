@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { Grid } from '@material-ui/core'
 import React, { useMemo, useState } from 'react'
 import { Card, Deck } from '../Types'
@@ -5,10 +7,9 @@ import { PlayingCard } from './PlayingCard'
 import CSS from "csstype";
 
 import { Preview } from 'react-dnd-preview';
+import { useSelector } from 'react-redux';
+import { selectDraggedCards } from '../Reducers/GameReducer';
 
-interface Props {
-  startingDeck: Deck[]
-}
 interface PreviewObject {
   itemType: string;
   item: {
@@ -20,25 +21,13 @@ interface PreviewObject {
 
 const distBetweenCards = 43
 
-const createPreviewCards = (draggedCard: Card | null, cards: Deck[]): Deck => {
-  if (draggedCard) {
+export const PlayingCardPreview = React.memo(() => {
 
-    let tmpPile = [...cards[draggedCard.column]]
-    return tmpPile.splice(draggedCard.pos, cards[draggedCard.column].length - draggedCard.pos)
-  }
-  return [];
-};
-
-
-export const PlayingCardPreview = React.memo((props: Props) => {
-
-  const [draggedCard, setDraggedCard] = useState<Card | null>(null);
-  const memoizedPreview = useMemo(() => createPreviewCards(draggedCard, props.startingDeck), [draggedCard, props.startingDeck]);
+  const draggedCards = useSelector(selectDraggedCards)
+  const memoizedPreview = useMemo(() => draggedCards, [draggedCards]);
 
   const generatePreview = ({ itemType, item, style }: PreviewObject) => {
-    if (item && item.card) {
-      setDraggedCard(item.card)
-    }
+    console.log(2)
     if (memoizedPreview.length > 0) {
       return (
         <>
@@ -48,17 +37,15 @@ export const PlayingCardPreview = React.memo((props: Props) => {
                 <PlayingCard
                   card={card}
                   turned={!card.discovered}
-                  display={true}
                   canDrop={idx === memoizedPreview.length - 1}
                   canDrag={card.discovered}
+
                 />
               </Grid>
             )
-
-          })}</>
-
+          })}
+        </>
       )
-
     } else {
       return (<></>)
     }

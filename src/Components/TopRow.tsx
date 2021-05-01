@@ -36,7 +36,6 @@ export function TopRow(props: Props) {
         <PlayingCard
           card={{ suit: "bg", value: "", numValue: -1, discovered: false, column: -1, pos: -1, isTop: false, isInGlobal: false, display: true }}
           turned={true}
-          display={true}
           canDrop={false}
           canDrag={false}
         />
@@ -56,7 +55,6 @@ export function TopRow(props: Props) {
                 <PlayingCard
                   card={card}
                   turned={false}
-                  display={true}
                   canDrop={false}
                   canDrag={idx === splitDeck[count].length - 1 ? true : false}
                 />
@@ -72,7 +70,6 @@ export function TopRow(props: Props) {
             <PlayingCard
               card={card[card.length - 1]}
               turned={false}
-              display={true}
               canDrop={true}
               canDrag={false}
             />

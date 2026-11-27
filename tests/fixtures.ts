@@ -38,11 +38,22 @@ export class Board {
   foundation(i: number): Locator {
     return this.page.getByTestId(`foundation-${i}`)
   }
+  foundationSlot(i: number): Locator {
+    return this.foundation(i).getByTestId('slot')
+  }
+  foundationCard(i: number): Locator {
+    return this.foundation(i).getByTestId('card')
+  }
   get stock(): Locator {
     return this.page.getByTestId('stock')
   }
   get waste(): Locator {
     return this.page.getByTestId('waste').getByTestId('card')
+  }
+
+  /** Click the stock `times` times. */
+  async draw(times = 1) {
+    for (let i = 0; i < times; i++) await this.stock.click()
   }
 
   /**
@@ -51,8 +62,10 @@ export class Board {
    * out of the pile while the drag is in progress).
    */
   async drag(source: Locator, target: Locator | { x: number; y: number }, opts: { sourceOffsetY?: number } = {}) {
-    const from = await source.boundingBox()
-    const to = 'x' in target ? { ...target, width: 0, height: 0 } : await target.boundingBox()
+    const [from, to] = await Promise.all([
+      source.boundingBox(),
+      'x' in target ? { ...target, width: 0, height: 0 } : target.boundingBox(),
+    ])
     if (!from || !to) throw new Error('drag source/target is not visible')
     const page = this.page
     await page.mouse.move(from.x + from.width / 2, from.y + (opts.sourceOffsetY ?? from.height / 2))
@@ -62,11 +75,9 @@ export class Board {
     await page.mouse.up()
   }
 
-  /** Text label such as "A♥︎" for a rendered face-up card. */
-  async label(card: Locator): Promise<string> {
-    const value = await card.getAttribute('data-value')
-    const suit = await card.getAttribute('data-suit')
-    return `${value}${suit}`
+  /** Labels such as "A♥︎" for the face-up cards in the waste. */
+  wasteLabels(): Promise<string[]> {
+    return this.waste.evaluateAll((els) => els.map((el) => `${el.dataset.value}${el.dataset.suit}`))
   }
 }
 

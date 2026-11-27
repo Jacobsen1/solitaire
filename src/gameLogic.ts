@@ -1,121 +1,85 @@
-/* eslint-disable */
+import type { Card, Deck } from './Types'
+import type { GameState } from './Reducers/GameReducer'
 
-import {Card, Deck} from './Types'
+const suits = ["♠︎", "♥︎", "♣︎", "♦︎"]
+const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
 
+export const isRed = (suit: string) => suit === "♥︎" || suit === "♦︎"
 
-const suits = ["♠︎", "♥︎", "♣︎", "♦︎"];
-const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K",];
-const numValues = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,];
+/** Placeholder card used for empty piles, foundations and the stock. */
+export function emptySlot(overrides: Partial<Card> = {}): Card {
+  return { suit: '', value: '', numValue: -1, discovered: false, column: -1, pos: -1, isTop: false, isInGlobal: false, ...overrides }
+}
 
+/** The empty slot at the bottom of each tableau pile (stable references, so memoized cards don't re-render). */
+export const TABLEAU_SLOTS: readonly Card[] = Array.from({ length: 7 }, (_, column) => emptySlot({ column }))
 
-
-
-export function initGameBoard(): {splitDeck: Deck[], startingDeck: Deck[]} {
-  let obj = makeStartingBoard()
-  let newGlobalDeck: Deck[] = []
-  let counter = 0
-  while (obj.globalDeck.length) {
-    let tmpCards: Deck = []
-    if ((obj.globalDeck.length - 3) > 0) {
-      tmpCards = obj.globalDeck.splice(obj.globalDeck.length - 3, 3)
-    } else {
-      tmpCards = obj.globalDeck.splice(0, obj.globalDeck.length)
-    }
-    for(let i = 0; i < tmpCards.length; i++){
-      tmpCards[i].pos = i
-      tmpCards[i].column = counter
-    }
-    newGlobalDeck.push(tmpCards)
-    counter++
+/**
+ * Splits the stock into draws of three, taken from the end of `cards`, and renumbers
+ * each card's column (draw index) and pos (index within the draw). Consumes `cards`.
+ */
+export function dealIntoDraws(cards: Deck): Deck[] {
+  const draws: Deck[] = []
+  while (cards.length) {
+    const draw = cards.splice(-3)
+    draw.forEach((card, pos) => {
+      card.pos = pos
+      card.column = draws.length
+    })
+    draws.push(draw)
   }
-  return {splitDeck: newGlobalDeck, startingDeck: obj.startingDeck}
+  return draws
 }
 
-export function getTopRightDeck() : Deck[] {
-  return [
-    [{ suit: '', value: '', numValue: -1, discovered: false, column: 0, pos: -1, isTop: true, isInGlobal: false, display: true }],
-    [{ suit: '', value: '', numValue: -1, discovered: false, column: 1, pos: -1, isTop: true, isInGlobal: false, display: true }],
-    [{ suit: '', value: '', numValue: -1, discovered: false, column: 2, pos: -1, isTop: true, isInGlobal: false, display: true }],
-    [{ suit: '', value: '', numValue: -1, discovered: false, column: 3, pos: -1, isTop: true, isInGlobal: false, display: true }]
-  ]
+export function newGame(): GameState {
+  const { startingDeck, globalDeck } = makeStartingBoard()
+  return {
+    startingDeck,
+    splitDeck: dealIntoDraws(globalDeck),
+    topRightDeck: [0, 1, 2, 3].map((column) => [emptySlot({ column, isTop: true })]),
+    draggedCards: [],
+  }
 }
 
-function makeStartingBoard(): {startingDeck: Deck[],globalDeck: Deck} {
-  let returnDeck = []
-  let deck = getGlobalDeck()
+function makeStartingBoard(): { startingDeck: Deck[], globalDeck: Deck } {
+  const startingDeck: Deck[] = []
+  const deck = getGlobalDeck()
   for (let i = 0; i < 7; i++) {
-    let tempDeck = []
-    //tempDeck.push({ suit: '', value: '', numValue: -1, discovered: false, column: i, pos: -1, isTop: false, isInGlobal: false })
+    const pile: Deck = []
     for (let j = 0; j <= i; j++) {
-      const rnd =Math.floor(Math.random() * deck.length)
-      let tmpCard = deck[rnd]
-      deck.splice(rnd, 1)
-      tmpCard.column = i
-      tmpCard.pos = j
-      tmpCard.isInGlobal = false
-      tmpCard.discovered = false
-      if (j === i) {
-        tmpCard.discovered = true
-      }
-      tempDeck.push(tmpCard)
+      const [card] = deck.splice(Math.floor(Math.random() * deck.length), 1)
+      card.column = i
+      card.pos = j
+      card.isInGlobal = false
+      card.discovered = j === i
+      pile.push(card)
     }
-    returnDeck.push(tempDeck)
+    startingDeck.push(pile)
   }
-  return {startingDeck: returnDeck, globalDeck: deck}
+  return { startingDeck, globalDeck: deck }
 }
+
 function getGlobalDeck(): Deck {
-  let returnDeck: Card[] = [];
-  for (let suit of suits) {
-    for (let i = 0; i < values.length; i++) {
-      returnDeck.push({ suit: suit, value: values[i], numValue: numValues[i], discovered: true, column: -1, pos: -1, isTop: false, isInGlobal: true, display: true });
-    }
-  }
-  return returnDeck
+  return suits.flatMap((suit) =>
+    values.map((value, i) => ({ suit, value, numValue: i + 1, discovered: true, column: -1, pos: -1, isTop: false, isInGlobal: true }))
+  )
 }
-//CHECK MOVES
+
+// MOVE RULES – currently not enforced (the app allows any move).
 export function isValidStartingDeck(fromCard: Card, toCard: Card): boolean {
-  //props.card.suit === "♥︎" || props.card.suit === "♦︎" ? "red" : "black",
-  if(toCard.suit === '' && toCard.value === "" && toCard.pos === -1){
+  if (toCard.suit === '' && toCard.value === '' && toCard.pos === -1) {
     return true
   }
-  else if(toCard.suit === "♥︎" || toCard.suit === "♦︎") {
-
-    if (fromCard.numValue + 1 === toCard.numValue && (fromCard.suit === "♣︎" || fromCard.suit === "♠︎")) {
-      return true
-    }
-  } else {
-
-    if (fromCard.numValue + 1 === toCard.numValue && (fromCard.suit === "♥︎" || fromCard.suit === "♦︎")) {
-      return true
-    }
-  }
-  console.log("INVALID MOVE")
-  return false
+  return fromCard.numValue + 1 === toCard.numValue && isRed(fromCard.suit) !== isRed(toCard.suit)
 }
 
-export function isValidTopDeck(fromCard: Card, toCard: Card):boolean {
-
-  if(toCard.suit === '' && toCard.value === '' && fromCard.value === "A"){
+export function isValidTopDeck(fromCard: Card, toCard: Card): boolean {
+  if (toCard.suit === '' && toCard.value === '' && fromCard.value === "A") {
     return true
-  } else {
-    console.log("First card must be A")
   }
-  if (fromCard.numValue === toCard.numValue + 1 && fromCard.suit === toCard.suit) {
-    return true
-  } else {
-    console.log("Selected card must be same suit and one value higher")
-  }
-  console.log("INVALID MOVE")
-  return false
+  return fromCard.numValue === toCard.numValue + 1 && fromCard.suit === toCard.suit
 }
 
-export function isValidFromSplit(fromCard: Card, toCard: Card):boolean{
-  if(toCard.isTop){
-    return isValidTopDeck(fromCard, toCard)
-  } else {
-    return isValidStartingDeck(fromCard, toCard)
-  }
+export function isValidFromSplit(fromCard: Card, toCard: Card): boolean {
+  return toCard.isTop ? isValidTopDeck(fromCard, toCard) : isValidStartingDeck(fromCard, toCard)
 }
-
-
-

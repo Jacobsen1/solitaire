@@ -1,11 +1,10 @@
-/* eslint-disable */
-import { Grid } from "@material-ui/core"
-import React, { useCallback, useContext, useEffect, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
+import { Grid } from "@mui/material"
+import { useState } from "react"
+import { useAppDispatch, useAppSelector } from "../store"
 import { updateSplitDeck } from "../Actions/GameActions"
-import { RootState, selectSplitDeck } from "../Reducers/GameReducer"
+import { selectSplitDeck } from "../Reducers/GameReducer"
 
-import { Deck, Card } from "../Types"
+import { Deck } from "../Types"
 import { PlayingCard } from "./PlayingCard"
 
 interface Props {
@@ -15,13 +14,13 @@ interface Props {
 
 export function TopRow(props: Props) {
   const [count, setCount] = useState<number>(-1)
-  const splitDeck = useSelector<RootState, Deck[]>(selectSplitDeck);
-  const dispatch = useDispatch()
+  const splitDeck = useAppSelector(selectSplitDeck);
+  const dispatch = useAppDispatch()
 
   return (
-    <Grid container direction="row" justify="space-between">
+    <Grid container direction="row" sx={{ justifyContent: "space-between" }}>
       <Grid
-        item
+        data-testid="stock"
         onClick={() => {
           if (count >= props.splitDeck.length - 1) {
             dispatch(updateSplitDeck())
@@ -29,8 +28,6 @@ export function TopRow(props: Props) {
           } else {
             setCount(count + 1)
           }
-          console.log(count)
-
         }}
       >
         <PlayingCard
@@ -40,12 +37,11 @@ export function TopRow(props: Props) {
           canDrag={false}
         />
       </Grid>
-      <Grid item style={{ width: "100px" }}>
-        <Grid container direction="row" style={{ position: "relative" }}>
+      <Grid style={{ width: "100px" }}>
+        <Grid container direction="row" data-testid="waste" style={{ position: "relative" }}>
           {count > -1 ? splitDeck[count].map((card, idx) => {
             return (
               <Grid
-                item
                 key={idx}
                 style={{
                   position: "absolute",
@@ -56,17 +52,17 @@ export function TopRow(props: Props) {
                   card={card}
                   turned={false}
                   canDrop={false}
-                  canDrag={idx === splitDeck[count].length - 1 ? true : false}
+                  canDrag={idx === splitDeck[count].length - 1}
                 />
               </Grid>
             )
           }) : ''}
         </Grid>
       </Grid>
-      <Grid item style={{ width: "100px" }}></Grid>
+      <Grid style={{ width: "100px" }}></Grid>
       {props.topRightDeck.map((card, idx) => {
         return (
-          <Grid item key={idx}>
+          <Grid key={idx} data-testid={`foundation-${idx}`}>
             <PlayingCard
               card={card[card.length - 1]}
               turned={false}

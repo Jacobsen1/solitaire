@@ -1,73 +1,13 @@
 /* eslint-disable */
 
-import React, { useEffect, } from "react";
-import { makeStyles } from "@material-ui/styles";
-import { Grid } from "@material-ui/core";
+import React, { useEffect } from "react";
+import "../CSS/PlayingCard.css";
 import { useDrag, useDrop } from 'react-dnd';
-import { Deck, Card } from '../Types'
+import { Card } from '../Types'
 import { getEmptyImage } from "react-dnd-html5-backend";
-import { useSelector, useDispatch } from 'react-redux'
+import { useAppDispatch } from '../store'
 import { moveCardStartingCard, moveCardSplitDeck, moveCardTopRight, toggleDraggedCards } from "../Actions/GameActions";
-import { selectStartingDeck } from "../Reducers/GameReducer";
 
-
-const cardDimDiff = 0.7191
-const cardWidth = 100
-
-
-const useStyles = makeStyles({
-  card: {
-    display: "flex",
-    width: cardWidth + "px",
-    height: cardWidth / cardDimDiff + "px",
-    borderRadius: "8px",
-    padding: "0px 4px 0px 4px",
-    backgroundColor: "white",
-    border: "3px solid black",
-    //position: "absolute",
-
-  },
-  cardbg: {
-    display: "flex",
-    width: cardWidth - 6 + "px",
-    height: (cardWidth - 6) / cardDimDiff + "px",
-    borderRadius: "8px",
-    border: "3px solid black",
-
-
-
-    //Image styling
-    backgroundImage: `url(` + process.env.PUBLIC_URL + `/background2.png)`,
-    backgroundRepeat: "no-repeat",
-    backgroundSize: "cover"
-  },
-
-  cardtl: {
-    display: "flex",
-    alignItems: "flex-start",
-  },
-
-  cardbr: {
-    display: "flex",
-    alignItems: "flex-start",
-    transform: `rotate(-180deg)`,
-  },
-  cardValue: {
-    fontSize: "30px",
-  },
-  cardSuit: {
-    fontSize: "30px",
-  },
-  red: {
-    color: "red",
-  },
-  black: {
-    color: "black",
-  },
-  bgImg: {
-    height: "100%",
-  },
-});
 
 interface Props {
   card: Card
@@ -78,23 +18,21 @@ interface Props {
 
 
 export const PlayingCard = React.memo((props: Props) => {
-  const classes = useStyles()
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
 
-  function attachDragNDrop(el: any) {
-    props.canDrop ? drop(el) : () => { }
-    props.canDrag ? drag(el) : () => { }
+  function attachDragNDrop(el: HTMLDivElement | null) {
+    if (props.canDrop) drop(el)
+    if (props.canDrag) drag(el)
   }
-  console.log("render")
 
-  const [{ }, drop] = useDrop({
+  const [, drop] = useDrop({
     accept: "Card",
     drop: () => {
       return { props: props.card }
     },
   })
 
-  const [{ isDragging, item, didDrop }, drag, dragPreview] = useDrag({
+  const [{ isDragging, item }, drag, dragPreview] = useDrag<{ card: Card }, unknown, { isDragging: boolean; item: { card: Card } | null }>({
     type: "Card",
     item: () => {
 
@@ -102,7 +40,7 @@ export const PlayingCard = React.memo((props: Props) => {
       return { card: props.card }
     },
     end: (item, monitor) => {
-      const dropResult: any = monitor.getDropResult();
+      const dropResult = monitor.getDropResult<{ props: Card }>();
       if (item && dropResult) {
         let fromCard: Card = item.card
         let toCard: Card = dropResult.props
@@ -127,7 +65,7 @@ export const PlayingCard = React.memo((props: Props) => {
       }
     },
     collect(monitor) {
-      return { isDragging: monitor.isDragging(), item: monitor.getItem(), didDrop: monitor.didDrop() }
+      return { isDragging: monitor.isDragging(), item: monitor.getItem() }
     }
   })
 
@@ -146,13 +84,14 @@ export const PlayingCard = React.memo((props: Props) => {
 
   if (props.turned === false || props.card.suit === '') {
     return (
-      <>
-        <Grid
+        <div
           ref={attachDragNDrop}
           id={props.card.suit + props.card.numValue}
-          container
-          direction="row"
-          className={classes.card}
+          data-testid={props.card.suit === "" ? "slot" : "card"}
+          data-suit={props.card.suit}
+          data-value={props.card.value}
+          data-face-up="true"
+          className="card"
           style={{
             color: props.card.suit === "♥︎" || props.card.suit === "♦︎" ? "red" : "black",
             border: props.card.suit === '' ? "2px solid rgba(0, 0, 0, 0.3)" : "3px solid rgba(0, 0, 0)",
@@ -160,42 +99,32 @@ export const PlayingCard = React.memo((props: Props) => {
             cursor: props.canDrag ? "pointer" : undefined,
           }}
         >
-          <Grid
-            container
-            direction="row"
-            justify="flex-start"
-            alignItems="flex-start"
-            className={classes.cardtl}
-          >
-            <Grid item className={classes.cardValue}>
+          <div className="card-tl">
+            <div className="card-value">
               {props.card.value}
-            </Grid>
-            <Grid item className={classes.cardSuit}>
+            </div>
+            <div className="card-suit">
               {props.card.suit}
-            </Grid>
-          </Grid>
-          <Grid
-            container
-            direction="row"
-            justify="flex-start"
-            alignItems="flex-start"
-            className={classes.cardbr}
-          >
-            <Grid item className={classes.cardValue}>
+            </div>
+          </div>
+          <div className="card-br">
+            <div className="card-value">
               {props.card.value}
-            </Grid>
-            <Grid item className={classes.cardSuit}>
+            </div>
+            <div className="card-suit">
               {props.card.suit}
-            </Grid>
-          </Grid>
-        </Grid>
-      </>
+            </div>
+          </div>
+        </div>
     )
   } else {
     return (
-      <Grid container>
-        <div className={classes.cardbg} />
-      </Grid>
+      <div data-testid="card" data-face-up="false">
+        <div
+          className="card-bg"
+          style={{ backgroundImage: `url(${import.meta.env.BASE_URL}background2.png)` }}
+        />
+      </div>
     );
   }
 })

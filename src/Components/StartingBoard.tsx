@@ -1,8 +1,5 @@
-/* eslint-disable */
-
-import { Grid } from "@material-ui/core";
-import React, { } from "react";
-import { Deck, Card } from '../Types'
+import { Grid } from "@mui/material";
+import { Deck } from '../Types'
 import { CardPile } from "./CardPile";
 
 
@@ -13,10 +10,10 @@ interface Props {
 export const StartingBoard = (props: Props) => {
 
   return (
-    <Grid container direction="row" alignItems="flex-start" justify="space-between"  >
+    <Grid container direction="row" sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
       {props.startingDeck.map((cards, idx) => {
         return (
-          <Grid item key={idx} style={{ position: "relative" }}>
+          <Grid key={idx} data-testid={`tableau-${idx}`} style={{ position: "relative" }}>
             <CardPile cards={cards} column={idx} />
           </Grid>
         )
@@ -25,4 +22,3 @@ export const StartingBoard = (props: Props) => {
 
   )
 }
-

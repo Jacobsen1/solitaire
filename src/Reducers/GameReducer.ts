@@ -1,6 +1,6 @@
 import { GameActions, GameActionTypes, GameState } from "../Actions/GameActions"
 import {  Card, Deck } from "../Types"
-import produce from "immer";
+import { produce } from "immer";
 
 
 
@@ -35,7 +35,7 @@ export const GameReducer = (state = initialState, action: GameActions): GameStat
         if(draft.startingDeck[fromCard.column].length > 0){
           draft.startingDeck[fromCard.column][fromCard.pos - 1].discovered = true
         }
-
+        draft.draggedCards = []
       })
     case GameActionTypes.MoveCardSplitDeck:
       return produce(state, draft => {
@@ -56,20 +56,25 @@ export const GameReducer = (state = initialState, action: GameActions): GameStat
       })
    
     case GameActionTypes.MoveCardTopRight:
-      let fromCard = action.payload.fromCard
-      if(state.startingDeck[fromCard.column].length - 1 === fromCard.pos){
-        return produce(state, draft => {
-          let newFromCard: Card = draft.startingDeck[fromCard.column].splice(fromCard.pos)[0]
-          if(draft.startingDeck[fromCard.column].length > 0){
-            draft.startingDeck[fromCard.column][fromCard.pos - 1].discovered = true
+      // The dragged card(s) were already lifted out of the tableau into `draggedCards`
+      // by ToggleDraggedCards when the drag started.
+      return produce(state, draft => {
+        let fromCard = action.payload.fromCard
+        let pile = draft.startingDeck[fromCard.column]
+        if (draft.draggedCards.length !== 1) {
+          // only a single card can go to a foundation: put the stack back
+          pile.push(...draft.draggedCards)
+        } else {
+          let newFromCard: Card = draft.draggedCards[0]
+          if (pile.length > 0) {
+            pile[pile.length - 1].discovered = true
           }
           newFromCard.isTop = true
           newFromCard.column = action.payload.toCard.column
           draft.topRightDeck[action.payload.toCard.column].push(newFromCard)
-        })
-      }else {
-        return state
-      }
+        }
+        draft.draggedCards = []
+      })
     case GameActionTypes.UpdateSplitDeck:
       console.log("Resetting splitdeck")
       return produce(state, draft => {
@@ -105,6 +110,11 @@ export const GameReducer = (state = initialState, action: GameActions): GameStat
         draft.topRightDeck = action.payload.topRightDeck
       })
     case GameActionTypes.ToggleDraggedCards:
+      // Only tableau cards are lifted into `draggedCards`; waste (isInGlobal) and foundation
+      // (isTop) cards use their own column/pos numbering and must not touch startingDeck.
+      if (action.payload.card.isInGlobal || action.payload.card.isTop) {
+        return state
+      }
       return produce(state, draft => {
         if(!action.payload.display){
           let draggedCards = draft.startingDeck[action.payload.card.column].splice(action.payload.card.pos)

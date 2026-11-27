@@ -1,6 +1,6 @@
 import { GameActions, GameActionTypes, GameState } from "../Actions/GameActions"
 import {  Card, Deck } from "../Types"
-import produce from "immer";
+import { produce } from "immer";
 
 
 

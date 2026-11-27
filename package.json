@@ -3,18 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "homepage": "https://jacobsen1.github.io/solitaire",
   "engines": {
     "node": ">=22.12"
   },
   "scripts": {
     "dev": "vite",
     "start": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc",
     "test": "playwright test",
-    "test:e2e": "playwright test",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
   },
@@ -23,7 +21,6 @@
     "@emotion/styled": "^11.14.1",
     "@mui/material": "^9.6.0",
     "@reduxjs/toolkit": "^2.15.0",
-    "immer": "^11.2.13",
     "react": "^19.3.1",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",

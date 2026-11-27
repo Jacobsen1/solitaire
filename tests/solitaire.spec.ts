@@ -23,22 +23,19 @@ test.describe('Initial deal', () => {
 
   test('starts with four empty foundations and an empty waste', async ({ board }) => {
     for (let i = 0; i < 4; i++) {
-      await expect(board.foundation(i).getByTestId('slot')).toBeVisible()
-      await expect(board.foundation(i).getByTestId('card')).toHaveCount(0)
+      await expect(board.foundationSlot(i)).toBeVisible()
+      await expect(board.foundationCard(i)).toHaveCount(0)
     }
     await expect(board.waste).toHaveCount(0)
   })
 
-  test('deals all 52 distinct cards (28 on the tableau, 24 in the stock)', async ({ board }) => {
-    const seen = new Set<string>()
-    let tableauCount = 0
-    for (let i = 0; i < 7; i++) tableauCount += await board.tableauCards(i).count()
-    expect(tableauCount).toBe(28)
+  test('deals all 52 distinct cards (28 on the tableau, 24 in the stock)', async ({ board, page }) => {
+    await expect(page.locator('[data-testid^="tableau-"] [data-testid="card"]')).toHaveCount(28)
 
+    const seen = new Set<string>()
     for (let draw = 0; draw < 8; draw++) {
-      await board.stock.click()
-      const cards = await board.waste.all()
-      for (const card of cards) seen.add(await board.label(card))
+      await board.draw()
+      for (const label of await board.wasteLabels()) seen.add(label)
     }
     expect(seen.size).toBe(24)
   })
@@ -46,7 +43,7 @@ test.describe('Initial deal', () => {
 
 test.describe('Stock and waste', () => {
   test('clicking the stock turns over three cards', async ({ board }) => {
-    await board.stock.click()
+    await board.draw()
     await expect(board.waste).toHaveCount(3)
     await expect(board.waste.last()).toHaveAttribute('data-value', 'K')
     await expect(board.waste.last()).toHaveAttribute('data-suit', '♦︎')
@@ -54,19 +51,19 @@ test.describe('Stock and waste', () => {
 
   test('cycles through the stock and starts over when it is exhausted', async ({ board }) => {
     for (let draw = 0; draw < 8; draw++) {
-      await board.stock.click()
+      await board.draw()
       await expect(board.waste).toHaveCount(3)
     }
     // ninth click: stock exhausted, waste is turned back into the stock
-    await board.stock.click()
+    await board.draw()
     await expect(board.waste).toHaveCount(0)
     // and dealing starts again from the first draw
-    await board.stock.click()
+    await board.draw()
     await expect(board.waste.last()).toHaveAttribute('data-value', 'K')
   })
 
   test('only the top waste card is draggable', async ({ board }) => {
-    await board.stock.click()
+    await board.draw()
     await expect(board.waste.last()).toHaveCSS('cursor', 'pointer')
     await expect(board.waste.first()).not.toHaveCSS('cursor', 'pointer')
   })
@@ -125,7 +122,7 @@ test.describe('Moving cards', () => {
   })
 
   test('moves the top waste card onto the tableau', async ({ board }) => {
-    await board.stock.click()
+    await board.draw()
     await board.drag(board.waste.last(), board.tableauCards(3).last())
 
     await expect(board.waste).toHaveCount(2)
@@ -134,21 +131,21 @@ test.describe('Moving cards', () => {
   })
 
   test('moves an ace from the waste to a foundation', async ({ board }) => {
-    for (let draw = 0; draw < 3; draw++) await board.stock.click()
+    await board.draw(3)
     await expect(board.waste.last()).toHaveAttribute('data-value', 'A')
 
-    await board.drag(board.waste.last(), board.foundation(0).getByTestId('slot'))
+    await board.drag(board.waste.last(), board.foundationSlot(0))
 
-    const foundationCard = board.foundation(0).getByTestId('card')
+    const foundationCard = board.foundationCard(0)
     await expect(foundationCard).toHaveAttribute('data-value', 'A')
     await expect(foundationCard).toHaveAttribute('data-suit', '♦︎')
     await expect(board.waste).toHaveCount(2)
   })
 
   test('moves the top tableau card to a foundation and reveals the next card', async ({ board }) => {
-    await board.drag(board.tableauCards(5).last(), board.foundation(1).getByTestId('slot'))
+    await board.drag(board.tableauCards(5).last(), board.foundationSlot(1))
 
-    await expect(board.foundation(1).getByTestId('card')).toHaveAttribute('data-value', '2')
+    await expect(board.foundationCard(1)).toHaveAttribute('data-value', '2')
     await expect(board.tableauCards(5)).toHaveCount(5)
     await expect(board.tableauCards(5).last()).toHaveAttribute('data-face-up', 'true')
   })
@@ -157,7 +154,7 @@ test.describe('Moving cards', () => {
 test.describe('Regressions', () => {
   test('dragging a waste card does not disturb the tableau', async ({ board }) => {
     // 4th draw is [5♣︎ 7♣︎ 8♣︎]; its top card has the same column/pos indexes as cards in tableau pile 3
-    for (let draw = 0; draw < 4; draw++) await board.stock.click()
+    await board.draw(4)
     await expect(board.waste.last()).toHaveAttribute('data-value', '8')
 
     await board.drag(board.waste.last(), board.tableauCards(6).last())

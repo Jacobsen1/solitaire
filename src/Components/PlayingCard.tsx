@@ -1,13 +1,15 @@
-/* eslint-disable */
+import React, { useCallback, useEffect } from "react"
+import { useDrag, useDrop } from "react-dnd"
+import { getEmptyImage } from "react-dnd-html5-backend"
+import { dropCards, liftCards, restoreCards } from "../Reducers/GameReducer"
+import { useAppDispatch } from "../store"
+import type { Card } from "../Types"
+import { CardFace } from "./CardFace"
 
-import React, { useEffect } from "react";
-import "../CSS/PlayingCard.css";
-import { useDrag, useDrop } from 'react-dnd';
-import { Card } from '../Types'
-import { getEmptyImage } from "react-dnd-html5-backend";
-import { useAppDispatch } from '../store'
-import { moveCardStartingCard, moveCardSplitDeck, moveCardTopRight, toggleDraggedCards } from "../Actions/GameActions";
+const DND_TYPE = "Card"
 
+type DragItem = { card: Card }
+type DropResult = { props: Card }
 
 interface Props {
   card: Card
@@ -16,115 +18,47 @@ interface Props {
   canDrag: boolean
 }
 
-
-export const PlayingCard = React.memo((props: Props) => {
+export const PlayingCard = React.memo(({ card, turned, canDrop, canDrag }: Props) => {
   const dispatch = useAppDispatch()
 
-  function attachDragNDrop(el: HTMLDivElement | null) {
-    if (props.canDrop) drop(el)
-    if (props.canDrag) drag(el)
-  }
-
-  const [, drop] = useDrop({
-    accept: "Card",
-    drop: () => {
-      return { props: props.card }
-    },
+  const [, drop] = useDrop<DragItem, DropResult>({
+    accept: DND_TYPE,
+    drop: () => ({ props: card }),
   })
 
-  const [{ isDragging, item }, drag, dragPreview] = useDrag<{ card: Card }, unknown, { isDragging: boolean; item: { card: Card } | null }>({
-    type: "Card",
-    item: () => {
-
-      //dispatch(toggleDraggedCards({ card: props.card, display: false }))
-      return { card: props.card }
-    },
+  const [{ isDragging }, drag, dragPreview] = useDrag<DragItem, DropResult, { isDragging: boolean }>({
+    type: DND_TYPE,
+    item: () => ({ card }),
     end: (item, monitor) => {
-      const dropResult = monitor.getDropResult<{ props: Card }>();
-      if (item && dropResult) {
-        let fromCard: Card = item.card
-        let toCard: Card = dropResult.props
-        if (fromCard !== undefined && toCard !== undefined && (fromCard.pos !== toCard.pos || fromCard.column !== toCard.column)) {
-          let payload = { fromCard: item.card, toCard: dropResult.props }
-          if (toCard.isTop && !fromCard.isInGlobal /*&& isValidTopDeck(fromCard, toCard)*/) {
-            dispatch(moveCardTopRight(payload))
-          } else if (fromCard.isInGlobal /*&& isValidFromSplit(fromCard, toCard)*/) {
-            dispatch(moveCardSplitDeck(payload))
-          } else if (!toCard.isTop/*&& isValidStartingDeck(fromCard, toCard)*/) {
-            dispatch(moveCardStartingCard(payload))
-          }
-        }
-        else {
-          //dispatch(toggleDraggedCards({ card: props.card, display: true }))
-          console.log("Something is undefined in useDrag or Cant drop a card on is self")
-        }
-      } else {
-        console.log("end")
-        dispatch(toggleDraggedCards({ card: props.card, display: true }))
-
+      const dropResult = monitor.getDropResult()
+      if (!dropResult) {
+        dispatch(restoreCards(card))
+        return
+      }
+      const toCard = dropResult.props
+      // dropping a card on itself does nothing
+      if (item.card.pos !== toCard.pos || item.card.column !== toCard.column) {
+        dispatch(dropCards({ fromCard: item.card, toCard }))
       }
     },
-    collect(monitor) {
-      return { isDragging: monitor.isDragging(), item: monitor.getItem() }
-    }
+    collect: (monitor) => ({ isDragging: monitor.isDragging() }),
   })
 
+  const attachDragAndDrop = useCallback((el: HTMLDivElement | null) => {
+    if (canDrop) drop(el)
+    if (canDrag) drag(el)
+  }, [canDrop, canDrag, drop, drag])
+
   useEffect(() => {
-    dragPreview(getEmptyImage(), { captureDraggingState: false });
+    dragPreview(getEmptyImage(), { captureDraggingState: false })
   }, [])
 
+  // Lift the card (and the cards on top of it) out of its pile once the drag has started.
   useEffect(() => {
-    if (item && item.card && isDragging) {
-      dispatch(toggleDraggedCards({ card: item.card, display: !isDragging }));
+    if (isDragging) {
+      dispatch(liftCards(card))
     }
-  }, [isDragging]);
+  }, [isDragging])
 
-
-
-
-  if (props.turned === false || props.card.suit === '') {
-    return (
-        <div
-          ref={attachDragNDrop}
-          id={props.card.suit + props.card.numValue}
-          data-testid={props.card.suit === "" ? "slot" : "card"}
-          data-suit={props.card.suit}
-          data-value={props.card.value}
-          data-face-up="true"
-          className="card"
-          style={{
-            color: props.card.suit === "♥︎" || props.card.suit === "♦︎" ? "red" : "black",
-            border: props.card.suit === '' ? "2px solid rgba(0, 0, 0, 0.3)" : "3px solid rgba(0, 0, 0)",
-            //display: !props.card.display ? "none" : undefined,
-            cursor: props.canDrag ? "pointer" : undefined,
-          }}
-        >
-          <div className="card-tl">
-            <div className="card-value">
-              {props.card.value}
-            </div>
-            <div className="card-suit">
-              {props.card.suit}
-            </div>
-          </div>
-          <div className="card-br">
-            <div className="card-value">
-              {props.card.value}
-            </div>
-            <div className="card-suit">
-              {props.card.suit}
-            </div>
-          </div>
-        </div>
-    )
-  } else {
-    return (
-      <div data-testid="card" data-face-up="false">
-        <div
-          className="card-bg"
-          style={{ backgroundImage: `url(${import.meta.env.BASE_URL}background2.png)` }}
-        />
-      </div>
-    );
-  }
+  return <CardFace ref={attachDragAndDrop} card={card} turned={turned} canDrag={canDrag} />
 })

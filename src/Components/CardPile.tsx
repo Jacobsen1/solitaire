@@ -1,38 +1,33 @@
-import { Grid } from "@mui/material";
-import { Card } from '../Types'
-import { PlayingCard } from "./PlayingCard";
-
+import React from "react"
+import { Grid } from "@mui/material"
+import { TABLEAU_SLOTS } from "../gameLogic"
+import type { Card } from "../Types"
+import { CARD_OFFSET } from "./layout"
+import { PlayingCard } from "./PlayingCard"
 
 interface Props {
-  cards: Card[];
+  cards: Card[]
   column: number
 }
-const distBetweenCards = 43
 
-
-export const CardPile = (props: Props) => {
-  return (
-    <>
-      <Grid style={{ position: "static", top: "0px" }}>
+export const CardPile = React.memo(({ cards, column }: Props) => (
+  <>
+    <Grid>
+      <PlayingCard card={TABLEAU_SLOTS[column]} canDrag={false} canDrop={true} turned={false} />
+    </Grid>
+    {cards.map((card, idx) => (
+      <Grid
+        key={idx}
+        className={card.discovered ? "pile" + card.column : ""}
+        style={{ position: "absolute", top: card.pos * CARD_OFFSET, overflow: "hidden", zIndex: 40 }}
+      >
         <PlayingCard
-          card={{ suit: '', value: '', numValue: -1, discovered: false, column: props.column, pos: -1, isTop: false, isInGlobal: false, display: true }}
-          canDrag={false}
-          canDrop={true}
-          turned={false}
+          card={card}
+          turned={!card.discovered}
+          canDrop={idx === cards.length - 1}
+          canDrag={card.discovered}
         />
       </Grid>
-      {props.cards.map((card, idx) => {
-        return (
-          <Grid className={card.discovered ? "pile" + card.column : ''} key={idx} style={{ position: "absolute", top: card.pos === 0 ? "0px" : card.pos * distBetweenCards + "px", overflow: "hidden", zIndex: 40 }}>
-            <PlayingCard
-              card={card}
-              turned={!card.discovered}
-              canDrop={idx === props.cards.length - 1}
-              canDrag={card.discovered}
-            />
-          </Grid>
-        )
-      })}
-    </>
-  )
-}
+    ))}
+  </>
+))

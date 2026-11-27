@@ -22,7 +22,7 @@ Implemented in `tests/solitaire.spec.ts`.
 - Top tableau card onto a foundation, revealing the next card.
 
 ## Notes
-- Move validation is currently disabled in the app (`PlayingCard.tsx` comments out the `isValid*` checks),
+- Move validation is currently disabled in the app (the `isValid*` rules in `src/gameLogic.ts` are not called),
   so tests assert that moves are carried out, not that illegal moves are rejected.
 - Use `board.drag()` instead of `locator.dragTo()`: the stepped mouse drag lets the app's drag-start
   effect run, like a real user drag.

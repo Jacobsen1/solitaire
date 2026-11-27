@@ -1,79 +1,53 @@
 import { Grid } from "@mui/material"
 import { useState } from "react"
+import { emptySlot } from "../gameLogic"
+import { resetStock, selectSplitDeck } from "../Reducers/GameReducer"
 import { useAppDispatch, useAppSelector } from "../store"
-import { updateSplitDeck } from "../Actions/GameActions"
-import { selectSplitDeck } from "../Reducers/GameReducer"
-
-import { Deck } from "../Types"
+import type { Deck } from "../Types"
+import { CARD_WIDTH } from "./layout"
 import { PlayingCard } from "./PlayingCard"
+
+const STOCK_CARD = emptySlot({ suit: "bg" })
 
 interface Props {
   topRightDeck: Deck[]
-  splitDeck: Deck[]
 }
 
-export function TopRow(props: Props) {
-  const [count, setCount] = useState<number>(-1)
-  const splitDeck = useAppSelector(selectSplitDeck);
+export default function TopRow({ topRightDeck }: Props) {
+  const [count, setCount] = useState(-1)
+  const splitDeck = useAppSelector(selectSplitDeck)
   const dispatch = useAppDispatch()
+  const waste = count > -1 ? splitDeck[count] : []
+
+  const drawFromStock = () => {
+    if (count >= splitDeck.length - 1) {
+      dispatch(resetStock())
+      setCount(-1)
+    } else {
+      setCount(count + 1)
+    }
+  }
 
   return (
     <Grid container direction="row" sx={{ justifyContent: "space-between" }}>
-      <Grid
-        data-testid="stock"
-        onClick={() => {
-          if (count >= props.splitDeck.length - 1) {
-            dispatch(updateSplitDeck())
-            setCount(-1)
-          } else {
-            setCount(count + 1)
-          }
-        }}
-      >
-        <PlayingCard
-          card={{ suit: "bg", value: "", numValue: -1, discovered: false, column: -1, pos: -1, isTop: false, isInGlobal: false, display: true }}
-          turned={true}
-          canDrop={false}
-          canDrag={false}
-        />
+      <Grid data-testid="stock" onClick={drawFromStock}>
+        <PlayingCard card={STOCK_CARD} turned={true} canDrop={false} canDrag={false} />
       </Grid>
-      <Grid style={{ width: "100px" }}>
+      <Grid style={{ width: CARD_WIDTH }}>
         <Grid container direction="row" data-testid="waste" style={{ position: "relative" }}>
-          {count > -1 ? splitDeck[count].map((card, idx) => {
-            return (
-              <Grid
-                key={idx}
-                style={{
-                  position: "absolute",
-                  left: idx * 50 + "px",
-                }}
-              >
-                <PlayingCard
-                  card={card}
-                  turned={false}
-                  canDrop={false}
-                  canDrag={idx === splitDeck[count].length - 1}
-                />
-              </Grid>
-            )
-          }) : ''}
+          {waste.map((card, idx) => (
+            <Grid key={idx} style={{ position: "absolute", left: idx * 50 }}>
+              <PlayingCard card={card} turned={false} canDrop={false} canDrag={idx === waste.length - 1} />
+            </Grid>
+          ))}
         </Grid>
       </Grid>
-      <Grid style={{ width: "100px" }}></Grid>
-      {props.topRightDeck.map((card, idx) => {
-        return (
-          <Grid key={idx} data-testid={`foundation-${idx}`}>
-            <PlayingCard
-              card={card[card.length - 1]}
-              turned={false}
-              canDrop={true}
-              canDrag={false}
-            />
-          </Grid>
-        )
-      })}
+      <Grid style={{ width: CARD_WIDTH }} />
+      {topRightDeck.map((pile, idx) => (
+        <Grid key={idx} data-testid={`foundation-${idx}`}>
+          <PlayingCard card={pile[pile.length - 1]} turned={false} canDrop={true} canDrag={false} />
+        </Grid>
+      ))}
     </Grid>
   )
 }
-
-export default TopRow
